@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "AI Studio Code Uploader",
+  "version": "1.0.0",
+  "description": "Automatically renames code files to .txt on upload for Google AI Studio. Supports a wide range of programming languages.",
+  "permissions": [
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://aistudio.google.com/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://aistudio.google.com/*"
+      ],
+      "js": [
+        "content-script.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
