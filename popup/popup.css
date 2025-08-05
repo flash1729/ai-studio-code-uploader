@@ -219,27 +219,6 @@ input:checked + .slider:before {
     margin-bottom: 0;
 }
 
-.activity-section ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    max-height: 100px;
-    overflow-y: auto;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.activity-section li {
-    padding: 8px 12px;
-    border-bottom: 1px solid #eee;
-    font-size: 12px;
-}
-
-.activity-section li:last-child {
-    border-bottom: none;
-}
-
 .help-section p {
     margin: 0;
     line-height: 1.5;

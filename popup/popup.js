@@ -1,14 +1,13 @@
 /**
  * @file popup.js
  * @description This script manages the popup UI, including the enable/disable toggle
- * and displaying activity logs from storage.
+ * and custom extension management.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     const enabledToggle = document.getElementById('extension-enabled');
     const statusText = document.getElementById('status-text');
     const fileTypesList = document.getElementById('file-types-list');
-    const activityLog = document.getElementById('activity-log');
     const customExtensionInput = document.getElementById('custom-extension-input');
     const addExtensionBtn = document.getElementById('add-extension-btn');
     const customExtensionsList = document.getElementById('custom-extensions-list');
@@ -28,14 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Load saved state from chrome.storage
-    chrome.storage.sync.get(['extensionEnabled', 'activityLog', 'customExtensions'], (data) => {
+    chrome.storage.sync.get(['extensionEnabled', 'customExtensions'], (data) => {
         const isEnabled = data.extensionEnabled !== false; // Default to true
         enabledToggle.checked = isEnabled;
         statusText.textContent = isEnabled ? 'Enabled' : 'Disabled';
         statusText.style.color = isEnabled ? '#4CAF50' : '#f44336';
-
-        const log = data.activityLog || [];
-        updateActivityLog(log);
 
         const customExtensions = data.customExtensions || [];
         updateCustomExtensionsList(customExtensions);
@@ -161,37 +157,4 @@ document.addEventListener('DOMContentLoaded', () => {
             customExtensionsList.appendChild(tag);
         });
     }
-
-    // Function to update the activity log in the popup
-    function updateActivityLog(log) {
-        activityLog.innerHTML = '';
-        if (log.length === 0) {
-            activityLog.innerHTML = '<li>No activity yet.</li>';
-            return;
-        }
-        // Show the last 5 entries in reverse chronological order
-        log.slice(-5).reverse().forEach(entry => {
-            const li = document.createElement('li');
-            li.textContent = `Renamed '${entry.original}' to '${entry.newName}'`;
-            activityLog.appendChild(li);
-        });
-    }
-
-    // Listen for activity logs from the content script
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.action === 'logActivity') {
-            chrome.storage.sync.get('activityLog', (data) => {
-                const log = data.activityLog || [];
-                // Add new entries to the beginning of the log
-                const newLog = [...message.data, ...log];
-                // Keep the log from growing indefinitely
-                if (newLog.length > 50) {
-                    newLog.length = 50;
-                }
-                chrome.storage.sync.set({ activityLog: newLog }, () => {
-                    updateActivityLog(newLog);
-                });
-            });
-        }
-    });
 });

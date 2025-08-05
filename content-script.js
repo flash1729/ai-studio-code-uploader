@@ -98,14 +98,6 @@ function handleFileInputChange(event) {
         configurable: true
       });
     }
-
-    // Log the activity for the popup to display
-    const activityLog = processedFiles.filter(p => p !== null);
-    if (activityLog.length > 0) {
-      chrome.runtime.sendMessage({ action: 'logActivity', data: activityLog }).catch(() => {
-        // Silently ignore popup communication errors
-      });
-    }
     
     // Trigger multiple events to ensure AI Studio detects the change
     input.dispatchEvent(new Event('input', { bubbles: true }));
