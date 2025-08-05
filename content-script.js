@@ -6,16 +6,32 @@
  */
 
 /**
- * A set of supported file extensions that will be renamed to .txt.
+ * A set of default supported file extensions that will be renamed to .txt.
  * This makes checking for supported file types efficient.
  * @type {Set<string>}
  */
-const SUPPORTED_EXTENSIONS = new Set([
+const DEFAULT_EXTENSIONS = new Set([
   '.py', '.js', '.ts', '.cpp', '.c', '.cs', '.java', '.go', '.php', '.rs', '.md',
   '.json', '.yml', '.yaml', '.html', '.css', '.sh', '.bat', '.pl', '.rb', '.jsx',
   '.tsx', '.vue', '.svelte', '.dart', '.kt', '.swift', '.r', '.sql', '.xml',
   '.toml', '.ini', '.cfg', '.conf'
 ]);
+
+/**
+ * Combined set of default and custom extensions
+ * @type {Set<string>}
+ */
+let SUPPORTED_EXTENSIONS = new Set(DEFAULT_EXTENSIONS);
+
+/**
+ * Load custom extensions from storage and update the supported extensions set
+ */
+function loadCustomExtensions() {
+  chrome.storage.sync.get('customExtensions', (data) => {
+    const customExtensions = data.customExtensions || [];
+    SUPPORTED_EXTENSIONS = new Set([...DEFAULT_EXTENSIONS, ...customExtensions]);
+  });
+}
 
 /**
  * Renames a file to have a .txt extension while preserving its content and metadata.
@@ -216,6 +232,9 @@ function observeForNewInputs() {
  * It also listens for messages from the popup, such as enabling/disabling the extension.
  */
 function initialize() {
+  // Load custom extensions first
+  loadCustomExtensions();
+  
   chrome.storage.sync.get('extensionEnabled', (data) => {
     if (data.extensionEnabled !== false) { // Enabled by default
       attachListenersToExistingInputs();
@@ -244,6 +263,11 @@ function initialize() {
         attachListenersToExistingInputs();
         observeForNewInputs();
       }
+      sendResponse({ success: true });
+    } else if (message.action === 'updateExtensions') {
+      // Update the supported extensions when custom extensions are modified
+      const customExtensions = message.customExtensions || [];
+      SUPPORTED_EXTENSIONS = new Set([...DEFAULT_EXTENSIONS, ...customExtensions]);
       sendResponse({ success: true });
     }
   });
