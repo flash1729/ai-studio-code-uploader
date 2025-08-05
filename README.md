@@ -16,6 +16,8 @@ The extension supports the following file extensions:
 
 `.py`, `.js`, `.ts`, `.cpp`, `.c`, `.cs`, `.java`, `.go`, `.php`, `.rs`, `.md`, `.json`, `.yml`, `.yaml`, `.html`, `.css`, `.sh`, `.bat`, `.pl`, `.rb`, `.jsx`, `.tsx`, `.vue`, `.svelte`, `.dart`, `.kt`, `.swift`, `.r`, `.sql`, `.xml`, `.toml`, `.ini`, `.cfg`, `.conf`
 
+**Custom Extensions:** You can easily add any custom file extensions you want through the extension's popup interface. Simply click on the extension icon in your Chrome toolbar and use the "Custom Extensions" section to add any file type you need (e.g., `.log`, `.diff`, `.config`, etc.).
+
 ## Installation
 
 1.  Download the `ai-studio-code-uploader` directory or clone the repository.
