@@ -1,0 +1,122 @@
+name: CI - Lint, Format Check, Manifest Validate, Build Zip
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ci:
+    name: Verify and Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: ESLint
+        run: pnpm eslint .
+
+      - name: Prettier - Check
+        run: pnpm prettier --check .
+
+      - name: Validate Chrome Extension manifest.json
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = 'manifest.json';
+          if (!fs.existsSync(path)) {
+            console.error('manifest.json not found at repo root. Update CI step path if needed.');
+            process.exit(1);
+          }
+          const m = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const required = ['manifest_version','name','version'];
+          const missing = required.filter(k => !(k in m));
+          if (missing.length) {
+            console.error('Missing required manifest fields:', missing.join(', '));
+            process.exit(1);
+          }
+          if (![2, 3].includes(m.manifest_version)) {
+            console.error('Unsupported manifest_version. Expected 2 or 3.');
+            process.exit(1);
+          }
+          console.log('Manifest looks structurally valid.');
+          "
+
+      - name: Build
+        run: |
+          if npm run | grep -qE '^  build'; then
+            npm run build
+          else
+            echo 'No build script found. Skipping build step.'
+          fi
+
+      - name: Prepare zip
+        run: |
+          OUT_DIR=""
+          if [ -d "dist" ]; then OUT_DIR="dist"; fi
+          if [ -z "$OUT_DIR" ] && [ -d "build" ]; then OUT_DIR="build"; fi
+          if [ -z "$OUT_DIR" ]; then
+            echo "No dist or build directory found. Add a build step or adjust this step."
+            exit 1
+          fi
+          ZIP_NAME="extension-${{ github.sha }}.zip"
+          (cd "$OUT_DIR" && zip -r "../$ZIP_NAME" .)
+          echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_ENV
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ZIP_NAME }}
+          path: ${{ env.ZIP_NAME }}
+          if-no-files-found: error
+
+  test:
+    runs-on: ubuntu-latest
+    needs: ci # Run after ci job completes
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always() # Upload even if tests fail
+        with:
+          name: playwright-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7

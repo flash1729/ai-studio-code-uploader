@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mock AI Studio Page</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 2em;
+      }
+      #drop-zone {
+        border: 2px dashed #ccc;
+        padding: 2em;
+        text-align: center;
+        margin-top: 2em;
+      }
+      #drop-zone.drag-over {
+        border-color: #333;
+        background-color: #f0f0f0;
+      }
+      #log {
+        margin-top: 1em;
+        font-family: monospace;
+        white-space: pre;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Mock Page for Testing</h1>
+    <p>Use this page to test the extension's functionality.</p>
+
+    <h2>Standard File Input</h2>
+    <input type="file" id="file-input" multiple />
+
+    <h2>Drag and Drop Zone</h2>
+    <div id="drop-zone">
+      <p>Drop files here</p>
+    </div>
+
+    <div id="log"></div>
+
+    <script>
+      const dropZone = document.getElementById("drop-zone");
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("drag-over");
+      });
+      dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("drag-over");
+      });
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("drag-over");
+        const files = e.dataTransfer.files;
+        const log = document.getElementById("log");
+        log.textContent = `Dropped ${files.length} file(s). First file: ${files[0]?.name}`;
+      });
+
+      const fileInput = document.getElementById("file-input");
+      fileInput.addEventListener("change", () => {
+        const files = fileInput.files;
+        const log = document.getElementById("log");
+        log.textContent = `Selected ${files.length} file(s). First file: ${files[0]?.name}`;
+      });
+    </script>
+  </body>
+</html>

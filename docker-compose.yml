@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  dev:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount your source code for live development
+      - .:/app
+      # Exclude node_modules to use container's version
+      - /app/node_modules
+      # Optional: persist pnpm cache
+      - pnpm-cache:/root/.local/share/pnpm
+    environment:
+      - NODE_ENV=development
+    stdin_open: true
+    tty: true
+    command: pnpm run dev
+
+  # Alternative service for running commands interactively
+  shell:
+    build: .
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - pnpm-cache:/root/.local/share/pnpm
+    environment:
+      - NODE_ENV=development
+    stdin_open: true
+    tty: true
+    command: /bin/sh
+
+volumes:
+  pnpm-cache:

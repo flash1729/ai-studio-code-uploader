@@ -1,60 +1,83 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Studio Code Uploader</title>
-    <link rel="stylesheet" href="popup.css">
-</head>
-<body>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <h1>AI Studio Code Uploader</h1>
-        </div>
+      <div class="header">
+        <h1>AI Studio Code Uploader</h1>
+      </div>
 
-        <div class="status-section">
-            <h2>Status</h2>
-            <div class="toggle-switch">
-                <label class="switch">
-                    <input type="checkbox" id="extension-enabled" checked>
-                    <span class="slider round"></span>
-                </label>
-                <span id="status-text">Enabled</span>
-            </div>
+      <div class="status-section">
+        <h2>Status</h2>
+        <div class="toggle-switch">
+          <label class="switch">
+            <input type="checkbox" id="extension-enabled" checked />
+            <span class="slider round"></span>
+          </label>
+          <span id="status-text">Enabled</span>
         </div>
+      </div>
 
-        <div class="info-section">
-            <h2>Supported File Types</h2>
-            <div id="file-types-list" class="file-types">
-                <!-- File types will be dynamically inserted here by popup.js -->
-            </div>
+      <div class="info-section">
+        <h2>Supported File Types</h2>
+        <div id="file-types-list" class="file-types">
+          <!-- File types will be dynamically inserted here by popup.js -->
         </div>
+      </div>
 
-        <div class="custom-extensions-section">
-            <h2>Custom Extensions</h2>
-            <div class="add-extension">
-                <input type="text" id="custom-extension-input" placeholder="e.g. .diff, .log" maxlength="10">
-                <button id="add-extension-btn">Add</button>
-            </div>
-            <div id="custom-extensions-list" class="custom-extensions">
-                <!-- Custom extensions will be displayed here -->
-            </div>
-            <p class="help-text">Add custom file extensions you want to convert to .txt</p>
+      <div class="custom-extensions-section">
+        <h2>Custom Extensions</h2>
+        <div class="add-extension">
+          <input type="text" id="custom-extension-input" placeholder="e.g. .diff, .log" maxlength="10" />
+          <button id="add-extension-btn">Add</button>
         </div>
+        <div id="custom-extensions-list" class="custom-extensions">
+          <!-- Custom extensions will be displayed here -->
+        </div>
+        <p class="help-text">Add custom file extensions you want to convert to .txt</p>
+      </div>
 
-        <div class="help-section">
-            <h2>How to Use</h2>
-            <p>
-                1. Go to <a href="https://aistudio.google.com/" target="_blank">AI Studio</a>.
-                <br>
-                2. Click on a file upload button.
-                <br>
-                3. Select any supported code file (.py, .js, etc.).
-                <br>
-                4. The extension will automatically handle the rest!
-            </p>
+      <div class="custom-selectors-section">
+        <h2>Target Selectors</h2>
+        <div class="add-selector">
+          <textarea id="custom-selectors-input" placeholder="e.g. input[type=&quot;file&quot;], .upload-area" rows="3"></textarea>
+          <button id="save-selectors-btn">Save Selectors</button>
         </div>
+        <p class="help-text">
+          Comma-separated CSS selectors for file inputs.
+          <br />
+          Default: <code>input[type="file"]</code>
+        </p>
+      </div>
+
+      <div class="renamed-files-section">
+        <div class="section-header">
+          <h2>Recently Renamed Files</h2>
+          <button id="clear-log-btn" title="Clear list">Clear</button>
+        </div>
+        <div id="renamed-files-list" class="renamed-files">
+          <!-- Renamed files will be dynamically inserted here -->
+        </div>
+      </div>
+
+      <div class="help-section">
+        <h2>How to Use</h2>
+        <p>
+          1. Go to <a href="https://aistudio.google.com/" target="_blank">AI Studio</a>.
+          <br />
+          2. Click on a file upload button.
+          <br />
+          3. Select any supported code file (.py, .js, etc.).
+          <br />
+          4. The extension will automatically handle the rest!
+        </p>
+      </div>
     </div>
     <script src="popup.js"></script>
-</body>
+  </body>
 </html>

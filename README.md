@@ -49,8 +49,8 @@ To set up the development environment:
 
 ## Troubleshooting
 
--   **Extension not working:** Ensure the extension is enabled in `chrome://extensions` and on the popup UI. Check the browser's developer console (F12) on the AI Studio page for any error messages from `[AI Studio Uploader]`.
--   **File not renamed:** Make sure the file extension is in the supported list. If not, you can add it to the `SUPPORTED_EXTENSIONS` set in `content-script.js`.
+- **Extension not working:** Ensure the extension is enabled in `chrome://extensions` and on the popup UI. Check the browser's developer console (F12) on the AI Studio page for any error messages from `[AI Studio Uploader]`.
+- **File not renamed:** Make sure the file extension is in the supported list. If not, you can add it to the `SUPPORTED_EXTENSIONS` set in `content-script.js`.
 
 ## License
 

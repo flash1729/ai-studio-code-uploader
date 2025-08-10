@@ -1,0 +1,36 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "A Chrome extension that automatically renames code files to `.txt` on upload for Google AI Studio, allowing you to upload your code without manual renaming.",
+  "main": "content-script.js",
+  "scripts": {
+    "test": "start-server-and-test test:serve http://localhost:8080 test:e2e",
+    "test:serve": "http-server -p 8080",
+    "test:e2e": "playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "./node_modules/.bin/eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flash1729/ai-studio-code-uploader.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/flash1729/ai-studio-code-uploader/issues"
+  },
+  "homepage": "https://github.com/flash1729/ai-studio-code-uploader#readme",
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@playwright/test": "^1.54.2",
+    "cowsay": "^1.6.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "http-server": "^14.1.1",
+    "prettier": "^3.6.2",
+    "start-server-and-test": "^2.0.13"
+  }
+}

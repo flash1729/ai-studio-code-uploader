@@ -10,12 +10,7 @@
  * This makes checking for supported file types efficient.
  * @type {Set<string>}
  */
-const DEFAULT_EXTENSIONS = new Set([
-  '.py', '.js', '.ts', '.cpp', '.c', '.cs', '.java', '.go', '.php', '.rs', '.md',
-  '.json', '.yml', '.yaml', '.html', '.css', '.sh', '.bat', '.pl', '.rb', '.jsx',
-  '.tsx', '.vue', '.svelte', '.dart', '.kt', '.swift', '.r', '.sql', '.xml',
-  '.toml', '.ini', '.cfg', '.conf'
-]);
+const DEFAULT_EXTENSIONS = new Set([".py", ".js", ".ts", ".cpp", ".c", ".cs", ".java", ".go", ".php", ".rs", ".md", ".json", ".yml", ".yaml", ".html", ".css", ".sh", ".bat", ".pl", ".rb", ".jsx", ".tsx", ".vue", ".svelte", ".dart", ".kt", ".swift", ".r", ".sql", ".xml", ".toml", ".ini", ".cfg", ".conf"]);
 
 /**
  * Combined set of default and custom extensions
@@ -24,12 +19,30 @@ const DEFAULT_EXTENSIONS = new Set([
 let SUPPORTED_EXTENSIONS = new Set(DEFAULT_EXTENSIONS);
 
 /**
- * Load custom extensions from storage and update the supported extensions set
+ * A list of CSS selectors for file input elements.
+ * @type {string[]}
+ */
+let TARGET_SELECTORS = ['input[type="file"]'];
+
+/**
+ * Load custom extensions from storage and update the supported extensions set.
  */
 function loadCustomExtensions() {
-  chrome.storage.sync.get('customExtensions', (data) => {
+  chrome.storage.sync.get("customExtensions", (data) => {
     const customExtensions = data.customExtensions || [];
     SUPPORTED_EXTENSIONS = new Set([...DEFAULT_EXTENSIONS, ...customExtensions]);
+  });
+}
+
+/**
+ * Load target selectors from storage and update the selectors list.
+ */
+function loadTargetSelectors() {
+  chrome.storage.sync.get("targetSelectors", (data) => {
+    const customSelectors = data.targetSelectors || [];
+    if (customSelectors.length > 0) {
+      TARGET_SELECTORS = customSelectors;
+    }
   });
 }
 
@@ -40,8 +53,8 @@ function loadCustomExtensions() {
  */
 function renameFileToTxt(file) {
   const originalName = file.name;
-  const lastDotIndex = originalName.lastIndexOf('.');
-  
+  const lastDotIndex = originalName.lastIndexOf(".");
+
   // Handle files with no extension or hidden files starting with a dot.
   const baseName = lastDotIndex > 0 ? originalName.substring(0, lastDotIndex) : originalName;
   const newName = `${baseName}.txt`;
@@ -49,11 +62,82 @@ function renameFileToTxt(file) {
   // Create a new File object with the new name. The content is passed as a blob.
   // The original file's lastModified timestamp is preserved.
   const newFile = new File([file], newName, {
-    type: 'text/plain',
+    type: "text/plain",
     lastModified: file.lastModified,
   });
 
   return newFile;
+}
+
+/**
+ * Logs a renamed file to chrome.storage.local for the popup to display.
+ * @param {string} originalName
+ * @param {string} newName
+ */
+async function logRenamedFile(originalName, newName) {
+  const { renamedFiles = [] } = await chrome.storage.local.get("renamedFiles");
+  const newEntry = {
+    originalName,
+    newName,
+    timestamp: new Date().toISOString(),
+  };
+
+  // Add new entry to the top and keep the list at a reasonable size (e.g., 50)
+  const updatedFiles = [newEntry, ...renamedFiles].slice(0, 50);
+
+  await chrome.storage.local.set({ renamedFiles: updatedFiles });
+}
+
+/**
+ * Handles dropped files, processes them, and attempts to assign them to a file input.
+ * @param {DragEvent} event - The drop event.
+ */
+function handleFileDrop(event) {
+  const files = event.dataTransfer.files;
+  if (!files || files.length === 0) {
+    return;
+  }
+
+  const originalFiles = Array.from(files);
+  const dataTransfer = new DataTransfer();
+  let filesModified = false;
+
+  originalFiles.forEach(file => {
+    const lastDotIndex = file.name.lastIndexOf(".");
+    const extension = lastDotIndex > 0 ? file.name.substring(lastDotIndex).toLowerCase() : "";
+
+    if (extension && SUPPORTED_EXTENSIONS.has(extension)) {
+      const newFile = renameFileToTxt(file);
+      dataTransfer.items.add(newFile);
+      filesModified = true;
+      logRenamedFile(file.name, newFile.name);
+    } else {
+      dataTransfer.items.add(file);
+    }
+  });
+
+  if (filesModified) {
+    // Try to find a suitable file input to assign the files to.
+    // This is a heuristic and might need to be adjusted based on the site's behavior.
+    const input = document.querySelector(TARGET_SELECTORS.join(","));
+
+    if (input) {
+      try {
+        input.files = dataTransfer.files;
+      } catch (e) {
+        Object.defineProperty(input, 'files', {
+          value: dataTransfer.files,
+          writable: false,
+          configurable: true
+        });
+      }
+      // Trigger events to notify the site of the change
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    } else {
+      console.warn("AI Studio Uploader: Could not find a file input to assign dropped files to.");
+    }
+  }
 }
 
 /**
@@ -71,14 +155,15 @@ function handleFileInputChange(event) {
   const dataTransfer = new DataTransfer();
   let filesModified = false;
 
-  const processedFiles = originalFiles.map(file => {
-    const lastDotIndex = file.name.lastIndexOf('.');
-    const extension = lastDotIndex > 0 ? file.name.substring(lastDotIndex).toLowerCase() : '';
-    
+  const processedFiles = originalFiles.map((file) => {
+    const lastDotIndex = file.name.lastIndexOf(".");
+    const extension = lastDotIndex > 0 ? file.name.substring(lastDotIndex).toLowerCase() : "";
+
     if (extension && SUPPORTED_EXTENSIONS.has(extension)) {
       const newFile = renameFileToTxt(file);
       dataTransfer.items.add(newFile);
       filesModified = true;
+      logRenamedFile(file.name, newFile.name);
       return { original: file.name, newName: newFile.name };
     } else {
       dataTransfer.items.add(file);
@@ -92,20 +177,20 @@ function handleFileInputChange(event) {
       input.files = dataTransfer.files;
     } catch (e) {
       // Fallback: Override the files property
-      Object.defineProperty(input, 'files', {
+      Object.defineProperty(input, "files", {
         value: dataTransfer.files,
         writable: false,
-        configurable: true
+        configurable: true,
       });
     }
-    
+
     // Trigger multiple events to ensure AI Studio detects the change
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+
     // Add a small delay and trigger again to ensure AI Studio processes it
     setTimeout(() => {
-      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event("input", { bubbles: true }));
     }, 100);
   }
 }
@@ -115,31 +200,30 @@ function handleFileInputChange(event) {
  * It adds a custom attribute to prevent attaching multiple listeners to the same element.
  */
 function attachListenersToExistingInputs() {
-  const fileInputs = document.querySelectorAll('input[type="file"]');
-  fileInputs.forEach(input => {
+  const fileInputs = document.querySelectorAll(TARGET_SELECTORS.join(","));
+  fileInputs.forEach((input) => {
     if (!input.dataset.codeUploaderAttached) {
       // Listen to multiple events that could indicate file selection
-      input.addEventListener('change', handleFileInputChange);
-      input.addEventListener('input', handleFileInputChange);
-      
+      input.addEventListener("change", handleFileInputChange);
+      input.addEventListener("input", handleFileInputChange);
+
       // Override the files property setter to catch programmatic changes
-      const originalFilesDescriptor = Object.getOwnPropertyDescriptor(input, 'files') || 
-                                    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'files');
-      
+      const originalFilesDescriptor = Object.getOwnPropertyDescriptor(input, "files") || Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "files");
+
       if (originalFilesDescriptor && originalFilesDescriptor.set) {
-        Object.defineProperty(input, 'files', {
+        Object.defineProperty(input, "files", {
           get: originalFilesDescriptor.get,
-          set: function(value) {
+          set: function (value) {
             originalFilesDescriptor.set.call(this, value);
             if (value && value.length > 0) {
               handleFileInputChange({ target: this });
             }
           },
-          configurable: true
+          configurable: true,
         });
       }
-      
-      input.dataset.codeUploaderAttached = 'true';
+
+      input.dataset.codeUploaderAttached = "true";
     }
   });
 }
@@ -151,60 +235,58 @@ function attachListenersToExistingInputs() {
 function observeForNewInputs() {
   const observer = new MutationObserver((mutationsList) => {
     for (const mutation of mutationsList) {
-      if (mutation.type === 'childList') {
-        mutation.addedNodes.forEach(node => {
+      if (mutation.type === "childList") {
+        mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
             // Check if the added node itself is a file input
-            if (node.matches('input[type="file"]') && !node.dataset.codeUploaderAttached) {
+            if (node.matches(TARGET_SELECTORS.join(",")) && !node.dataset.codeUploaderAttached) {
               // Listen to multiple events
-              node.addEventListener('change', handleFileInputChange);
-              node.addEventListener('input', handleFileInputChange);
-              
+              node.addEventListener("change", handleFileInputChange);
+              node.addEventListener("input", handleFileInputChange);
+
               // Override files property setter
-              const originalFilesDescriptor = Object.getOwnPropertyDescriptor(node, 'files') || 
-                                            Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'files');
-              
+              const originalFilesDescriptor = Object.getOwnPropertyDescriptor(node, "files") || Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "files");
+
               if (originalFilesDescriptor && originalFilesDescriptor.set) {
-                Object.defineProperty(node, 'files', {
+                Object.defineProperty(node, "files", {
                   get: originalFilesDescriptor.get,
-                  set: function(value) {
+                  set: function (value) {
                     originalFilesDescriptor.set.call(this, value);
                     if (value && value.length > 0) {
                       handleFileInputChange({ target: this });
                     }
                   },
-                  configurable: true
+                  configurable: true,
                 });
               }
-              
-              node.dataset.codeUploaderAttached = 'true';
+
+              node.dataset.codeUploaderAttached = "true";
             }
             // Check for file inputs within the added node's subtree
-            const newInputs = node.querySelectorAll('input[type="file"]');
-            newInputs.forEach(input => {
+            const newInputs = node.querySelectorAll(TARGET_SELECTORS.join(","));
+            newInputs.forEach((input) => {
               if (!input.dataset.codeUploaderAttached) {
                 // Listen to multiple events
-                input.addEventListener('change', handleFileInputChange);
-                input.addEventListener('input', handleFileInputChange);
-                
+                input.addEventListener("change", handleFileInputChange);
+                input.addEventListener("input", handleFileInputChange);
+
                 // Override files property setter
-                const originalFilesDescriptor = Object.getOwnPropertyDescriptor(input, 'files') || 
-                                              Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'files');
-                
+                const originalFilesDescriptor = Object.getOwnPropertyDescriptor(input, "files") || Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "files");
+
                 if (originalFilesDescriptor && originalFilesDescriptor.set) {
-                  Object.defineProperty(input, 'files', {
+                  Object.defineProperty(input, "files", {
                     get: originalFilesDescriptor.get,
-                    set: function(value) {
+                    set: function (value) {
                       originalFilesDescriptor.set.call(this, value);
                       if (value && value.length > 0) {
                         handleFileInputChange({ target: this });
                       }
                     },
-                    configurable: true
+                    configurable: true,
                   });
                 }
-                
-                input.dataset.codeUploaderAttached = 'true';
+
+                input.dataset.codeUploaderAttached = "true";
               }
             });
           }
@@ -215,7 +297,7 @@ function observeForNewInputs() {
 
   observer.observe(document.body, {
     childList: true,
-    subtree: true
+    subtree: true,
   });
 }
 
@@ -224,48 +306,64 @@ function observeForNewInputs() {
  * It also listens for messages from the popup, such as enabling/disabling the extension.
  */
 function initialize() {
-  // Load custom extensions first
+  // Load configuration from storage first
   loadCustomExtensions();
-  
-  chrome.storage.sync.get('extensionEnabled', (data) => {
-    if (data.extensionEnabled !== false) { // Enabled by default
+  loadTargetSelectors();
+
+  chrome.storage.sync.get("extensionEnabled", (data) => {
+    if (data.extensionEnabled !== false) {
+      // Enabled by default
       attachListenersToExistingInputs();
       observeForNewInputs();
-      
+
       // Add global click listener to detect file upload button clicks
-      document.addEventListener('click', (event) => {
+      document.addEventListener("click", (event) => {
         // Check if clicked element or its parent might trigger file upload
         const target = event.target;
-        if (target.matches('button, [role="button"], .upload-btn, [data-testid*="upload"], [aria-label*="upload" i], [aria-label*="attach" i]') ||
-            target.closest('button, [role="button"], .upload-btn, [data-testid*="upload"], [aria-label*="upload" i], [aria-label*="attach" i]')) {
+        if (target.matches('button, [role="button"], .upload-btn, [data-testid*="upload"], [aria-label*="upload" i], [aria-label*="attach" i]') || target.closest('button, [role="button"], .upload-btn, [data-testid*="upload"], [aria-label*="upload" i], [aria-label*="attach" i]')) {
           // Wait a bit for any new file inputs to be created
           setTimeout(() => {
             attachListenersToExistingInputs();
           }, 100);
         }
       });
-      
+
+      // --- Drag and Drop Support ---
+      document.body.addEventListener("dragover", (event) => {
+        // Prevent default behavior to allow drop
+        event.preventDefault();
+      });
+
+      document.body.addEventListener("drop", (event) => {
+        event.preventDefault();
+        handleFileDrop(event);
+      });
     }
   });
 
   // Listen for messages from the popup to toggle the extension's functionality
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.action === 'toggleExtension') {
+    if (message.action === "toggleExtension") {
       if (message.enabled) {
         attachListenersToExistingInputs();
         observeForNewInputs();
       }
       sendResponse({ success: true });
-    } else if (message.action === 'updateExtensions') {
+    } else if (message.action === "updateExtensions") {
       // Update the supported extensions when custom extensions are modified
       const customExtensions = message.customExtensions || [];
       SUPPORTED_EXTENSIONS = new Set([...DEFAULT_EXTENSIONS, ...customExtensions]);
+      sendResponse({ success: true });
+    } else if (message.action === "updateSelectors") {
+      loadTargetSelectors();
+      // Re-attach listeners with the new selectors
+      attachListenersToExistingInputs();
       sendResponse({ success: true });
     }
   });
 }
 
 // Only initialize if we're on AI Studio
-if (window.location.hostname.includes('aistudio.google.com')) {
+if (window.location.hostname.includes("aistudio.google.com")) {
   initialize();
 }
