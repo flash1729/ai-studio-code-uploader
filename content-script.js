@@ -28,7 +28,7 @@ let TARGET_SELECTORS = ['input[type="file"]'];
  * Load custom extensions from storage and update the supported extensions set.
  */
 function loadCustomExtensions() {
-  chrome.storage.sync.get("customExtensions", (data) => {
+  browser.storage.sync.get("customExtensions", (data) => {
     const customExtensions = data.customExtensions || [];
     SUPPORTED_EXTENSIONS = new Set([...DEFAULT_EXTENSIONS, ...customExtensions]);
   });
@@ -38,7 +38,7 @@ function loadCustomExtensions() {
  * Load target selectors from storage and update the selectors list.
  */
 function loadTargetSelectors() {
-  chrome.storage.sync.get("targetSelectors", (data) => {
+  browser.storage.sync.get("targetSelectors", (data) => {
     const customSelectors = data.targetSelectors || [];
     if (customSelectors.length > 0) {
       TARGET_SELECTORS = customSelectors;
@@ -75,7 +75,7 @@ function renameFileToTxt(file) {
  * @param {string} newName
  */
 async function logRenamedFile(originalName, newName) {
-  const { renamedFiles = [] } = await chrome.storage.local.get("renamedFiles");
+  const { renamedFiles = [] } = await browser.storage.local.get("renamedFiles");
   const newEntry = {
     originalName,
     newName,
@@ -85,7 +85,30 @@ async function logRenamedFile(originalName, newName) {
   // Add new entry to the top and keep the list at a reasonable size (e.g., 50)
   const updatedFiles = [newEntry, ...renamedFiles].slice(0, 50);
 
-  await chrome.storage.local.set({ renamedFiles: updatedFiles });
+  await browser.storage.local.set({ renamedFiles: updatedFiles });
+}
+
+/**
+ * Checks if a file extension is supported, including wildcards.
+ * @param {string} extension - The file extension to check (e.g., '.js').
+ * @returns {boolean} True if the extension is supported.
+ */
+function isExtensionSupported(extension) {
+  for (const pattern of SUPPORTED_EXTENSIONS) {
+    if (pattern.includes("*")) {
+      // Convert wildcard to regex
+      const regex = new RegExp(`^${pattern.replace(/\*/g, '.*')}$`);
+      if (regex.test(extension)) {
+        return true;
+      }
+    } else {
+      // Exact match
+      if (pattern === extension) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 /**
@@ -106,7 +129,7 @@ function handleFileDrop(event) {
     const lastDotIndex = file.name.lastIndexOf(".");
     const extension = lastDotIndex > 0 ? file.name.substring(lastDotIndex).toLowerCase() : "";
 
-    if (extension && SUPPORTED_EXTENSIONS.has(extension)) {
+    if (extension && isExtensionSupported(extension)) {
       const newFile = renameFileToTxt(file);
       dataTransfer.items.add(newFile);
       filesModified = true;
@@ -159,7 +182,7 @@ function handleFileInputChange(event) {
     const lastDotIndex = file.name.lastIndexOf(".");
     const extension = lastDotIndex > 0 ? file.name.substring(lastDotIndex).toLowerCase() : "";
 
-    if (extension && SUPPORTED_EXTENSIONS.has(extension)) {
+    if (extension && isExtensionSupported(extension)) {
       const newFile = renameFileToTxt(file);
       dataTransfer.items.add(newFile);
       filesModified = true;
@@ -310,7 +333,7 @@ function initialize() {
   loadCustomExtensions();
   loadTargetSelectors();
 
-  chrome.storage.sync.get("extensionEnabled", (data) => {
+  browser.storage.sync.get("extensionEnabled", (data) => {
     if (data.extensionEnabled !== false) {
       // Enabled by default
       attachListenersToExistingInputs();
@@ -342,7 +365,7 @@ function initialize() {
   });
 
   // Listen for messages from the popup to toggle the extension's functionality
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "toggleExtension") {
       if (message.enabled) {
         attachListenersToExistingInputs();

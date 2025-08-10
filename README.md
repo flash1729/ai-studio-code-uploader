@@ -1,57 +1,75 @@
 # AI Studio Code Uploader
 
-A Chrome extension that automatically renames code files to `.txt` on upload for Google AI Studio, allowing you to upload your code without manual renaming.
+[![CI Status](https://github.com/your-repo/ai-studio-code-uploader/actions/workflows/ci.yml/badge.svg)](https://github.com/your-repo/ai-studio-code-uploader/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+An extension that automatically renames code files to `.txt` on upload for Google AI Studio, allowing you to upload your code without manual renaming.
 
 ## Features
 
-- **Automatic Renaming:** Intercepts file uploads on `aistudio.google.com` and renames supported code files to `.txt` in-memory.
-- **Wide Language Support:** Works with a comprehensive list of common programming and configuration file extensions.
-- **Seamless Integration:** Works with standard file inputs and dynamically loaded content.
-- **User-Friendly Popup:** Provides a simple UI to enable/disable the extension and view recent activity.
-- **Secure and Private:** No data is collected or transmitted. All operations happen locally in your browser.
-
-## Supported File Types
-
-The extension supports the following file extensions:
-
-`.py`, `.js`, `.ts`, `.cpp`, `.c`, `.cs`, `.java`, `.go`, `.php`, `.rs`, `.md`, `.json`, `.yml`, `.yaml`, `.html`, `.css`, `.sh`, `.bat`, `.pl`, `.rb`, `.jsx`, `.tsx`, `.vue`, `.svelte`, `.dart`, `.kt`, `.swift`, `.r`, `.sql`, `.xml`, `.toml`, `.ini`, `.cfg`, `.conf`
-
-**Custom Extensions:** You can easily add any custom file extensions you want through the extension's popup interface. Simply click on the extension icon in your Chrome toolbar and use the "Custom Extensions" section to add any file type you need (e.g., `.log`, `.diff`, `.config`, etc.).
+- **Automatic File Renaming:** Intercepts file uploads on `aistudio.google.com` and renames supported code files to `.txt` in-memory.
+- **Drag-and-Drop Support:** Seamlessly handles files that are dragged and dropped onto the page.
+- **Configurable File Extensions:** Supports a wide range of common code files by default, and allows you to add your own custom extensions through the popup.
+- **Configurable Selectors:** Allows you to define the CSS selectors for file inputs, making the extension resilient to website updates.
+- **Quick-Toggle Shortcut:** Use `Ctrl+Shift+U` (`MacCtrl+Shift+U` on Mac) to quickly enable or disable the extension. The icon changes to show the current status.
+- **Live Upload Log:** The popup UI shows a live list of the most recently renamed files, including the original name, new name, and timestamp.
 
 ## Installation
 
-1.  Download the `ai-studio-code-uploader` directory or clone the repository.
-2.  Open Google Chrome and navigate to `chrome://extensions`.
+Once the extension is published, you will be able to install it from the Chrome Web Store.
+
+For now, to install it manually:
+
+1.  Clone this repository or download the source code as a ZIP file.
+2.  Open your browser and navigate to `chrome://extensions`.
 3.  Enable "Developer mode" using the toggle switch in the top-right corner.
 4.  Click the "Load unpacked" button.
-5.  Select the `ai-studio-code-uploader` directory.
+5.  Select the directory where you cloned or unzipped the source code.
 
-The extension is now installed and active.
-
-## How to Use
+## Usage
 
 1.  Navigate to [Google AI Studio](https://aistudio.google.com/).
-2.  Click on any file upload button.
-3.  Select one or more supported code files (e.g., `my_script.py`).
-4.  The extension will automatically rename the file to `my_script.txt` before it is uploaded. You can see a log of renamed files in the popup.
+2.  Ensure the extension is enabled (the icon should be in full color).
+3.  Click on any file upload button or drag files onto a drop zone.
+4.  Select one or more supported code files (e.g., `my_script.py`).
+5.  The extension will automatically rename the file to `my_script.txt` before it is uploaded. You can see a log of renamed files in the popup.
 
 ## Development
 
-To set up the development environment:
+This project uses a Docker-based development environment to ensure consistency and bypass any local environment issues.
 
-1.  Clone the repository:
+### Prerequisites
+- Docker Desktop installed and running.
+
+### Setup
+1.  Clone the repository.
+2.  In the project root, build the container:
     ```bash
-    git clone https://github.com/your-username/ai-studio-code-uploader.git
+    docker-compose build
     ```
-2.  Follow the installation steps above to load the extension in Chrome.
-3.  Make changes to the source files (`content-script.js`, `popup.html`, etc.).
-4.  Go to `chrome://extensions` and click the "Reload" button for the extension to apply your changes.
+3.  To run commands, get an interactive shell into the container:
+    ```bash
+    docker-compose run --rm shell
+    ```
+4.  Inside the container shell, you can run all project scripts:
+    ```bash
+    # Install dependencies
+    pnpm install
 
-## Troubleshooting
+    # Run linter
+    pnpm lint
 
-- **Extension not working:** Ensure the extension is enabled in `chrome://extensions` and on the popup UI. Check the browser's developer console (F12) on the AI Studio page for any error messages from `[AI Studio Uploader]`.
-- **File not renamed:** Make sure the file extension is in the supported list. If not, you can add it to the `SUPPORTED_EXTENSIONS` set in `content-script.js`.
+    # Run tests
+    pnpm test
+    ```
 
-## License
+### Local Development without Docker (If Environment is Correctly Configured)
+If your local environment is correctly configured (Node.js v18+, pnpm), you can run commands directly:
+1.  Install dependencies: `pnpm install`
+2.  Load the extension in your browser using "Load unpacked" as described in the Installation section.
+3.  Make changes to the source files.
+4.  Reload the extension from the `chrome://extensions` page.
 
-This project is licensed under the MIT License.
+## Contributing
+
+We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on code style, testing, and how to submit a pull request.

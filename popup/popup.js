@@ -27,8 +27,8 @@ document.addEventListener("DOMContentLoaded", () => {
     fileTypesList.appendChild(span);
   });
 
-  // Load saved state from chrome.storage
-  chrome.storage.sync.get(["extensionEnabled", "customExtensions", "targetSelectors"], (data) => {
+  // Load saved state from browser.storage
+  browser.storage.sync.get(["extensionEnabled", "customExtensions", "targetSelectors"], (data) => {
     const isEnabled = data.extensionEnabled !== false; // Default to true
     enabledToggle.checked = isEnabled;
     statusText.textContent = isEnabled ? "Enabled" : "Disabled";
@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Load renamed files log from local storage
-  chrome.storage.local.get("renamedFiles", (data) => {
+  browser.storage.local.get("renamedFiles", (data) => {
     const renamedFiles = data.renamedFiles || [];
     updateRenamedFilesList(renamedFiles);
   });
@@ -50,14 +50,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // Handle toggle switch changes
   enabledToggle.addEventListener("change", () => {
     const isEnabled = enabledToggle.checked;
-    chrome.storage.sync.set({ extensionEnabled: isEnabled }, () => {
+    browser.storage.sync.set({ extensionEnabled: isEnabled }, () => {
       statusText.textContent = isEnabled ? "Enabled" : "Disabled";
       statusText.style.color = isEnabled ? "#4CAF50" : "#f44336";
 
       // Notify the content script to enable/disable its functionality
-      chrome.tabs.query({ url: "https://aistudio.google.com/*" }, (tabs) => {
+      browser.tabs.query({ url: "https://aistudio.google.com/*" }, (tabs) => {
         tabs.forEach((tab) => {
-          chrome.tabs.sendMessage(tab.id, {
+          browser.tabs.sendMessage(tab.id, {
             action: "toggleExtension",
             enabled: isEnabled,
           });
@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    chrome.storage.sync.get("customExtensions", (data) => {
+    browser.storage.sync.get("customExtensions", (data) => {
       const customExtensions = data.customExtensions || [];
 
       // Check if already added
@@ -106,14 +106,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Add new extension
       const updatedExtensions = [...customExtensions, extension];
-      chrome.storage.sync.set({ customExtensions: updatedExtensions }, () => {
+      browser.storage.sync.set({ customExtensions: updatedExtensions }, () => {
         updateCustomExtensionsList(updatedExtensions);
         customExtensionInput.value = "";
 
         // Notify content script to reload extensions
-        chrome.tabs.query({ url: "https://aistudio.google.com/*" }, (tabs) => {
+        browser.tabs.query({ url: "https://aistudio.google.com/*" }, (tabs) => {
           tabs.forEach((tab) => {
-            chrome.tabs.sendMessage(tab.id, {
+            browser.tabs.sendMessage(tab.id, {
               action: "updateExtensions",
               customExtensions: updatedExtensions,
             });
@@ -124,17 +124,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function removeCustomExtension(extension) {
-    chrome.storage.sync.get("customExtensions", (data) => {
+    browser.storage.sync.get("customExtensions", (data) => {
       const customExtensions = data.customExtensions || [];
       const updatedExtensions = customExtensions.filter((ext) => ext !== extension);
 
-      chrome.storage.sync.set({ customExtensions: updatedExtensions }, () => {
+      browser.storage.sync.set({ customExtensions: updatedExtensions }, () => {
         updateCustomExtensionsList(updatedExtensions);
 
         // Notify content script to reload extensions
-        chrome.tabs.query({ url: "https://aistudio.google.com/*" }, (tabs) => {
+        browser.tabs.query({ url: "https://aistudio.google.com/*" }, (tabs) => {
           tabs.forEach((tab) => {
-            chrome.tabs.sendMessage(tab.id, {
+            browser.tabs.sendMessage(tab.id, {
               action: "updateExtensions",
               customExtensions: updatedExtensions,
             });
@@ -175,11 +175,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectorsString = selectorsInput.value.trim();
     const selectorsArray = selectorsString.split(",").map(s => s.trim()).filter(Boolean);
 
-    chrome.storage.sync.set({ targetSelectors: selectorsArray }, () => {
+    browser.storage.sync.set({ targetSelectors: selectorsArray }, () => {
       // Notify content script to reload selectors
-      chrome.tabs.query({ url: "https://aistudio.google.com/*" }, (tabs) => {
+      browser.tabs.query({ url: "https://aistudio.google.com/*" }, (tabs) => {
         tabs.forEach((tab) => {
-          chrome.tabs.sendMessage(tab.id, {
+          browser.tabs.sendMessage(tab.id, {
             action: "updateSelectors",
             targetSelectors: selectorsArray
           });
@@ -231,7 +231,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   clearLogBtn.addEventListener("click", () => {
-    chrome.storage.local.set({ renamedFiles: [] }, () => {
+    browser.storage.local.set({ renamedFiles: [] }, () => {
       updateRenamedFilesList([]);
     });
   });
